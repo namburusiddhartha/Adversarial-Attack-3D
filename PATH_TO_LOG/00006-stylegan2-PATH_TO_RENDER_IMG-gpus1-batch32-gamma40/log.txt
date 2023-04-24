@@ -1,0 +1,33 @@
+Setting up PyTorch plugin "upfirdn2d_plugin"... Failed!
+Traceback (most recent call last):
+  File "/home/snamburu/get3d/GET3D/train_3d.py", line 330, in <module>
+    main()  # pylint: disable=no-value-for-parameter
+  File "/home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/click/core.py", line 1130, in __call__
+    return self.main(*args, **kwargs)
+  File "/home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/click/core.py", line 1055, in main
+    rv = self.invoke(ctx)
+  File "/home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/click/core.py", line 1404, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+  File "/home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/click/core.py", line 760, in invoke
+    return __callback(*args, **kwargs)
+  File "/home/snamburu/get3d/GET3D/train_3d.py", line 324, in main
+    launch_training(c=c, desc=desc, outdir=opts.outdir, dry_run=opts.dry_run)
+  File "/home/snamburu/get3d/GET3D/train_3d.py", line 103, in launch_training
+    subprocess_fn(rank=0, c=c, temp_dir=temp_dir)
+  File "/home/snamburu/get3d/GET3D/train_3d.py", line 49, in subprocess_fn
+    training_loop_3d.training_loop(rank=rank, **c)
+  File "/home/snamburu/get3d/GET3D/training/training_loop_3d.py", line 113, in training_loop
+    upfirdn2d._init()
+  File "/home/snamburu/get3d/GET3D/torch_utils/ops/upfirdn2d.py", line 28, in _init
+    _plugin = custom_ops.get_plugin(
+  File "/home/snamburu/get3d/GET3D/torch_utils/custom_ops.py", line 140, in get_plugin
+    torch.utils.cpp_extension.load(
+  File "/home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/torch/utils/cpp_extension.py", line 1284, in load
+    return _jit_compile(
+  File "/home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/torch/utils/cpp_extension.py", line 1508, in _jit_compile
+    _write_ninja_file_and_build_library(
+  File "/home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/torch/utils/cpp_extension.py", line 1592, in _write_ninja_file_and_build_library
+    verify_ninja_availability()
+  File "/home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/torch/utils/cpp_extension.py", line 1648, in verify_ninja_availability
+    raise RuntimeError("Ninja is required to load C++ extensions")
+RuntimeError: Ninja is required to load C++ extensions

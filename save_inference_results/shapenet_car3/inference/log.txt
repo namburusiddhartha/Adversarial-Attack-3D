@@ -1,0 +1,17 @@
+Setting up PyTorch plugin "upfirdn2d_plugin"... Done.
+Setting up PyTorch plugin "bias_act_plugin"... Done.
+Setting up PyTorch plugin "filtered_lrelu_plugin"... Done.
+==> resume from pretrained path ./pretrained_model/shapenet_car.pt
+==> generate 
+/home/snamburu/get3d/GET3D/training/networks_get3d.py:430: UserWarning: torch.range is deprecated and will be removed in a future release because its behavior is inconsistent with Python's range builtin. Instead, use torch.arange, which produces values in [start, end).
+  camera_theta = torch.range(0, n_camera - 1, device=self.device).unsqueeze(dim=-1) / n_camera * math.pi * 2.0
+==> generate inference 3d shapes with texture
+Setting up PyTorch plugin "upfirdn2d_plugin"... Done.
+Setting up PyTorch plugin "bias_act_plugin"... Done.
+Setting up PyTorch plugin "filtered_lrelu_plugin"... Done.
+==> resume from pretrained path ./pretrained_model/shapenet_car.pt
+NSHAPE 25
+==> generate 
+/home/snamburu/get3d/GET3D/training/networks_get3d.py:430: UserWarning: torch.range is deprecated and will be removed in a future release because its behavior is inconsistent with Python's range builtin. Instead, use torch.arange, which produces values in [start, end).
+  camera_theta = torch.range(0, n_camera - 1, device=self.device).unsqueeze(dim=-1) / n_camera * math.pi * 2.0
+==> generate inference 3d shapes with texture

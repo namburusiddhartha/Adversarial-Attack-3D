@@ -1,0 +1,43 @@
+Setting up PyTorch plugin "upfirdn2d_plugin"... Done.
+Setting up PyTorch plugin "bias_act_plugin"... Done.
+Setting up PyTorch plugin "filtered_lrelu_plugin"... Done.
+Loading training set...
+==> use shapenet dataset
+==> ERROR!!!! THIS SHOULD ONLY HAPPEN WHEN USING INFERENCE
+==> use image path: PATH_TO_RENDER_IMG, num images: 1234
+
+Num images:  1234
+Image shape: [3, 1024, 1024]
+Label shape: [0]
+
+Constructing networks...
+Setting up augmentation...
+Distributing across 1 GPUs...
+Setting up training phases...
+Exporting sample images...
+Traceback (most recent call last):
+  File "train_3d.py", line 331, in <module>
+    main()  # pylint: disable=no-value-for-parameter
+  File "/home/snamburu/anaconda3/envs/get3d/lib/python3.8/site-packages/click/core.py", line 1130, in __call__
+    return self.main(*args, **kwargs)
+  File "/home/snamburu/anaconda3/envs/get3d/lib/python3.8/site-packages/click/core.py", line 1055, in main
+    rv = self.invoke(ctx)
+  File "/home/snamburu/anaconda3/envs/get3d/lib/python3.8/site-packages/click/core.py", line 1404, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+  File "/home/snamburu/anaconda3/envs/get3d/lib/python3.8/site-packages/click/core.py", line 760, in invoke
+    return __callback(*args, **kwargs)
+  File "train_3d.py", line 325, in main
+    launch_training(c=c, desc=desc, outdir=opts.outdir, dry_run=opts.dry_run)
+  File "train_3d.py", line 104, in launch_training
+    subprocess_fn(rank=0, c=c, temp_dir=temp_dir)
+  File "train_3d.py", line 50, in subprocess_fn
+    training_loop_3d.training_loop(rank=rank, **c)
+  File "/home/snamburu/get3d/GET3D/training/training_loop_3d.py", line 222, in training_loop
+    grid_size, images, labels, masks = setup_snapshot_image_grid(training_set=training_set, inference=inference_vis)
+  File "/home/snamburu/get3d/GET3D/training/training_loop_3d.py", line 66, in setup_snapshot_image_grid
+    images, labels, masks = zip(*[training_set[i][:3] for i in grid_indices])
+  File "/home/snamburu/get3d/GET3D/training/training_loop_3d.py", line 66, in <listcomp>
+    images, labels, masks = zip(*[training_set[i][:3] for i in grid_indices])
+  File "/home/snamburu/get3d/GET3D/training/dataset.py", line 292, in __getitem__
+    img = ori_img[:, :, :3][..., ::-1]
+TypeError: 'NoneType' object is not subscriptable

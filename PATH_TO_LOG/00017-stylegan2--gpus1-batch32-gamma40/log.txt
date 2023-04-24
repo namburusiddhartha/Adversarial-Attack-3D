@@ -1,0 +1,29 @@
+Setting up PyTorch plugin "upfirdn2d_plugin"... Done.
+Setting up PyTorch plugin "bias_act_plugin"... Done.
+Setting up PyTorch plugin "filtered_lrelu_plugin"... Done.
+Loading training set...
+==> use shapenet dataset
+==> use shapenet folder number 0
+==> use image path: /home/snamburu/attack/satellite-vehicle-point-detection/results/, num images: 0
+Traceback (most recent call last):
+  File "train_3d.py", line 331, in <module>
+    main()  # pylint: disable=no-value-for-parameter
+  File "/home/snamburu/anaconda3/envs/get3d/lib/python3.8/site-packages/click/core.py", line 1130, in __call__
+    return self.main(*args, **kwargs)
+  File "/home/snamburu/anaconda3/envs/get3d/lib/python3.8/site-packages/click/core.py", line 1055, in main
+    rv = self.invoke(ctx)
+  File "/home/snamburu/anaconda3/envs/get3d/lib/python3.8/site-packages/click/core.py", line 1404, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+  File "/home/snamburu/anaconda3/envs/get3d/lib/python3.8/site-packages/click/core.py", line 760, in invoke
+    return __callback(*args, **kwargs)
+  File "train_3d.py", line 325, in main
+    launch_training(c=c, desc=desc, outdir=opts.outdir, dry_run=opts.dry_run)
+  File "train_3d.py", line 104, in launch_training
+    subprocess_fn(rank=0, c=c, temp_dir=temp_dir)
+  File "train_3d.py", line 50, in subprocess_fn
+    training_loop_3d.training_loop(rank=rank, **c)
+  File "/home/snamburu/get3d/GET3D/training/training_loop_3d.py", line 134, in training_loop
+    training_set_sampler = misc.InfiniteSampler(
+  File "/home/snamburu/get3d/GET3D/torch_utils/misc.py", line 120, in __init__
+    assert len(dataset) > 0
+AssertionError

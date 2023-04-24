@@ -1,0 +1,49 @@
+Setting up PyTorch plugin "upfirdn2d_plugin"... Failed!
+Traceback (most recent call last):
+  File "/home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/torch/utils/cpp_extension.py", line 1900, in _run_ninja_build
+    subprocess.run(
+  File "/home/snamburu/anaconda3/envs/satdet/lib/python3.9/subprocess.py", line 528, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['ninja', '-v']' returned non-zero exit status 1.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/snamburu/get3d/GET3D/train_3d.py", line 334, in <module>
+    main()  # pylint: disable=no-value-for-parameter
+  File "/home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/click/core.py", line 1130, in __call__
+    return self.main(*args, **kwargs)
+  File "/home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/click/core.py", line 1055, in main
+    rv = self.invoke(ctx)
+  File "/home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/click/core.py", line 1404, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+  File "/home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/click/core.py", line 760, in invoke
+    return __callback(*args, **kwargs)
+  File "/home/snamburu/get3d/GET3D/train_3d.py", line 328, in main
+    launch_training(c=c, desc=desc, outdir=opts.outdir, dry_run=opts.dry_run)
+  File "/home/snamburu/get3d/GET3D/train_3d.py", line 107, in launch_training
+    subprocess_fn(rank=0, c=c, temp_dir=temp_dir)
+  File "/home/snamburu/get3d/GET3D/train_3d.py", line 53, in subprocess_fn
+    training_loop_3d.training_loop(rank=rank, **c)
+  File "/home/snamburu/get3d/GET3D/training/training_loop_3d.py", line 113, in training_loop
+    upfirdn2d._init()
+  File "/home/snamburu/get3d/GET3D/torch_utils/ops/upfirdn2d.py", line 28, in _init
+    _plugin = custom_ops.get_plugin(
+  File "/home/snamburu/get3d/GET3D/torch_utils/custom_ops.py", line 140, in get_plugin
+    torch.utils.cpp_extension.load(
+  File "/home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/torch/utils/cpp_extension.py", line 1284, in load
+    return _jit_compile(
+  File "/home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/torch/utils/cpp_extension.py", line 1508, in _jit_compile
+    _write_ninja_file_and_build_library(
+  File "/home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/torch/utils/cpp_extension.py", line 1623, in _write_ninja_file_and_build_library
+    _run_ninja_build(
+  File "/home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/torch/utils/cpp_extension.py", line 1916, in _run_ninja_build
+    raise RuntimeError(message) from e
+RuntimeError: Error building extension 'upfirdn2d_plugin': [1/2] /home/snamburu/anaconda3/envs/satdet/bin/nvcc  -DTORCH_EXTENSION_NAME=upfirdn2d_plugin -DTORCH_API_INCLUDE_EXTENSION_H -DPYBIND11_COMPILER_TYPE=\"_gcc\" -DPYBIND11_STDLIB=\"_libstdcpp\" -DPYBIND11_BUILD_ABI=\"_cxxabi1011\" -isystem /home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/torch/include -isystem /home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/torch/include/torch/csrc/api/include -isystem /home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/torch/include/TH -isystem /home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/torch/include/THC -isystem /home/snamburu/anaconda3/envs/satdet/include -isystem /home/snamburu/anaconda3/envs/satdet/include/python3.9 -D_GLIBCXX_USE_CXX11_ABI=0 -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr -gencode=arch=compute_75,code=compute_75 -gencode=arch=compute_75,code=sm_75 --compiler-options '-fPIC' --use_fast_math -std=c++14 -c /home/snamburu/.cache/torch_extensions/py39_cu117/upfirdn2d_plugin/7299e3f0b4b270a9768af03373336fdf-quadro-rtx-6000/upfirdn2d.cu -o upfirdn2d.cuda.o 
+FAILED: upfirdn2d.cuda.o 
+/home/snamburu/anaconda3/envs/satdet/bin/nvcc  -DTORCH_EXTENSION_NAME=upfirdn2d_plugin -DTORCH_API_INCLUDE_EXTENSION_H -DPYBIND11_COMPILER_TYPE=\"_gcc\" -DPYBIND11_STDLIB=\"_libstdcpp\" -DPYBIND11_BUILD_ABI=\"_cxxabi1011\" -isystem /home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/torch/include -isystem /home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/torch/include/torch/csrc/api/include -isystem /home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/torch/include/TH -isystem /home/snamburu/anaconda3/envs/satdet/lib/python3.9/site-packages/torch/include/THC -isystem /home/snamburu/anaconda3/envs/satdet/include -isystem /home/snamburu/anaconda3/envs/satdet/include/python3.9 -D_GLIBCXX_USE_CXX11_ABI=0 -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr -gencode=arch=compute_75,code=compute_75 -gencode=arch=compute_75,code=sm_75 --compiler-options '-fPIC' --use_fast_math -std=c++14 -c /home/snamburu/.cache/torch_extensions/py39_cu117/upfirdn2d_plugin/7299e3f0b4b270a9768af03373336fdf-quadro-rtx-6000/upfirdn2d.cu -o upfirdn2d.cuda.o 
+gcc: fatal error: cannot execute ‘cc1plus’: execvp: No such file or directory
+compilation terminated.
+nvcc fatal   : Failed to preprocess host compiler properties.
+ninja: build stopped: subcommand failed.
+

@@ -1,0 +1,1 @@
+Setting up PyTorch plugin "upfirdn2d_plugin"... Failed!
