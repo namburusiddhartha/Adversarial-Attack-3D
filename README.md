@@ -132,14 +132,3 @@ GET3D builds upon several previous works:
 - [DIB-R++: Learning to Predict Lighting and Material with a Hybrid Differentiable Renderer (NeurIPS 2021)](https://nv-tlabs.github.io/DIBRPlus/)
 - [Nvdiffrast – Modular Primitives for High-Performance Differentiable Rendering (SIGRAPH Asia 2020)](https://nvlabs.github.io/nvdiffrast/)
 
-## Citation
-
-```latex
-@inproceedings{gao2022get3d,
-title={GET3D: A Generative Model of High Quality 3D Textured Shapes Learned from Images},
-author={Jun Gao and Tianchang Shen and Zian Wang and Wenzheng Chen and Kangxue Yin
-and Daiqing Li and Or Litany and Zan Gojcic and Sanja Fidler},
-booktitle={Advances In Neural Information Processing Systems},
-year={2022}
-}
-```
