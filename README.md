@@ -1,6 +1,6 @@
 ## Adversarial Attack on GET3D </sub>
 
-![Teaser image](./docs/assets/picture1.png)
+![Teaser image](./docs/assets/Picture1.png)
 
 ### Borrowed from GET3D Repo
 
