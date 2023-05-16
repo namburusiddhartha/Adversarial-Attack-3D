@@ -18,6 +18,7 @@ from metrics import metric_main
 from torch_utils import training_stats
 from torch_utils import custom_ops
 from training import inference_3d
+from training import attack
 
 
 
@@ -43,7 +44,9 @@ def subprocess_fn(rank, c, temp_dir):
     if rank != 0:
         custom_ops.verbosity = 'none'
 
-    if c.inference_vis:
+    if c.attack_default:
+        attack.attack(rank=rank, **c)
+    elif c.inference_vis:
         inference_3d.inference(rank=rank, **c)
     # Execute training loop.
     else:
@@ -62,7 +65,9 @@ def launch_training(c, desc, outdir, dry_run):
     prev_run_ids = [re.match(r'^\d+', x) for x in prev_run_dirs]
     prev_run_ids = [int(x.group()) for x in prev_run_ids if x is not None]
     cur_run_id = max(prev_run_ids, default=-1) + 1
-    if c.inference_vis:
+    if c.attack_default:
+        c.run_dir = os.path.join(outdir, 'attack')
+    elif c.inference_vis:
         c.run_dir = os.path.join(outdir, 'inference')
     else:
         c.run_dir = os.path.join(outdir, f'{cur_run_id:05d}-{desc}')
@@ -110,6 +115,10 @@ def launch_training(c, desc, outdir, dry_run):
 def init_dataset_kwargs(data, opt=None):
     try:
         if opt.use_shapenet_split:
+            split = 'test' if opt.inference_vis else 'train'
+            if opt.attack_default:
+                split = 'test' 
+            
             dataset_kwargs = dnnlib.EasyDict(
                 class_name='training.dataset.ImageFolderDataset',
                 path=data, use_labels=True, max_size=None, xflip=False,
@@ -117,7 +126,7 @@ def init_dataset_kwargs(data, opt=None):
                 data_camera_mode=opt.data_camera_mode,
                 add_camera_cond=opt.add_camera_cond,
                 camera_path=opt.camera_path,
-                split='test' if opt.inference_vis else 'train',
+                split=split,
             )
         else:
             dataset_kwargs = dnnlib.EasyDict(
@@ -164,6 +173,14 @@ def parse_comma_separated_list(s):
 @click.option('--inference_save_interpolation', help='inference to generate interpolation results', metavar='BOOL', type=bool, default=False, show_default=False)
 @click.option('--inference_compute_fid', help='inference to generate interpolation results', metavar='BOOL', type=bool, default=False, show_default=False)
 @click.option('--inference_generate_geo', help='inference to generate geometry points', metavar='BOOL', type=bool, default=False, show_default=False)
+
+### Configs for attack
+@click.option('--attack_default', help='Attack the basic model', metavar='BOOL', type=bool, default=False, show_default=True)
+@click.option('--attack_train', help='Attack/Train', metavar='BOOL', type=bool, default=False, show_default=True)
+@click.option('--attack_logdir', help='Path to log the attack results', metavar='[DIR]', type=str, default='./tmp')
+@click.option('--attack_background_data', help='Path for background images to attack', metavar='[DIR]', type=str, default='./tmp')
+@click.option('--attack_type', help='0 - texture, 1 - shape, 2 - generator', metavar='INT', type=int, required=False)
+@click.option('--detector_attack_config', help='Config to attack the model')
 ### Configs for dataset
 
 @click.option('--data', help='Path to the Training data Images', metavar='[DIR]', type=str, default='./tmp')
@@ -235,6 +252,15 @@ def main(**kwargs):
 
     c.data_loader_kwargs = dnnlib.EasyDict(pin_memory=True, prefetch_factor=2)
     c.inference_vis = opts.inference_vis
+
+    #Attacker arguments
+    c.attack_default = opts.attack_default
+    c.attack_train = opts.attack_train
+    c.attack_logdir = opts.attack_logdir
+    c.attack_background_data = opts.attack_background_data
+    c.attack_type = opts.attack_type
+    c.detector_attack_config = opts.detector_attack_config
+
     # Training set.
     if opts.inference_vis:
         c.inference_to_generate_textured_mesh = opts.inference_to_generate_textured_mesh

@@ -62,7 +62,7 @@ class differentiablerenderer():
     
     def extract_screen_coordinates(self, meshes, distances, elevations, azimuths, scaling_factors):
         assert len(meshes) == len(distances) == len(elevations) == len(azimuths)
-        image_size = 384
+        image_size = 1024
         
         # Initialize the cameras
         scaling_factors = scaling_factors.repeat(1, 3)
@@ -133,7 +133,7 @@ class differentiablerenderer():
         ) 
         sigma = 1e-4
         raster_settings_silhouette = RasterizationSettings(
-            image_size=384, 
+            image_size=1024, 
             blur_radius=np.log(1. / 1e-4 - 1.)*sigma, 
             faces_per_pixel=50, 
         )
@@ -211,7 +211,7 @@ class differentiablerenderer():
             elevation = math.atan(distance / math.sqrt(x * x + y * y)) * 180.0 / math.pi
             azimuth = 0.0
         else:
-            elevation = math.atan(distance / math.sqrt(x * x + y * y)) * 180.0 / math.pi
+            elevation = math.atan(distance / math.sqrt(x * x + y * y)) * 180.0 / math.pi 
             azimuth = math.atan(y / x) * 180.0 / math.pi
             if x < 0:
                 if y > 0:
@@ -241,6 +241,19 @@ class differentiablerenderer():
         
         return (distances, elevations, azimuths, lights_directions, scaling_factors, intensities)
     
+    def camera_position_from_spherical_angles(self, distance, elevation, azimuth, degrees=True):
+        dist, elev, azim = torch.tensor(distance, device = self.DEVICE).unsqueeze(0), torch.tensor(elevation, device = self.DEVICE).unsqueeze(0), torch.tensor(azimuth, device = self.DEVICE).unsqueeze(0)
+        if degrees:
+            elev = math.pi / 180.0 * elev
+            azim = math.pi / 180.0 * azim
+        x = dist * torch.cos(elev) * torch.sin(azim)
+        y = dist * torch.sin(elev)
+        z = dist * torch.cos(elev) * torch.cos(azim)
+        camera_position = torch.stack([x, y, z], dim=1)
+        if camera_position.dim() == 0:
+            camera_position = camera_position.view(1, -1)  # add batch dim.
+        return camera_position.view(-1, 3)
+    
     def construct_annotations_files(self, locations_batch):
         annotations_batch = []
         
@@ -260,20 +273,59 @@ class differentiablerenderer():
         return annotations_batch
     
     def render_batch(self, meshes, background_images, elevations, azimuths, light_directions, distances,
-                     scaling_factors, intensities, image_size=384, blur_radius=0.0, faces_per_pixel=1, ambient_color=((0.05, 0.05, 0.05),)):
+                     scaling_factors, intensities, image_size=1024, blur_radius=0.0, faces_per_pixel=1, ambient_color=((0.05, 0.05, 0.05),)):
         # Image needs to be upscaled and then average pooled to make the car less sharp-edged
         transform = Resize((image_size, image_size))
         background_images = transform(background_images).permute(0, 2, 3, 1)
         scaling_factors = scaling_factors.repeat(1, 3)
         intensities = intensities.repeat(1, 3)
+
+        print("DS", distances, elevations, azimuths)
+        # distances = [1.0]*4
+        # #elevations = [225]*4
+        # #azimuths = [45]*4
+        # correction = [90]*4
+        # elevations = [sum(x) for x in zip(elevations, correction)]
+        # print("DS", distances, elevations, azimuths)
+
+        # new_t = torch.eye(4, device=self.device).unsqueeze(0).repeat(4, 1, 1)
+        # i = 0
+        # for dist, ele, azi in zip(distances, elevations, azimuths):
+        #    new_t[i, :3, 3] = self.camera_position_from_spherical_angles(dist, ele, azi)
+        #    #print(new_t[i, :3, 3])
+        #    i += 1
+
+            #print(dist, ele, azi)
+
         
         R, T = look_at_view_transform(dist=distances, elev=elevations, azim=azimuths)
+
+        # print("RT", R.shape , T.shape)
+        # r = torch.tensor([[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]], device=self.device).unsqueeze(0).repeat(4, 1, 1)
+
+        
+        # # print(new_t.shape)
+        # new_t[:, :3, 3] = T
+        # new_r = torch.eye(4, device=self.device).unsqueeze(0).repeat(4, 1, 1)
+        # new_r[:, :3, :3] = R @ r
+        # world2cam = new_r @ new_t
+        # print("C1", world2cam)
+        # new_r[:, :3, 3] = T
+        # print("C0", new_r)
+
+        #R = torch.eye(3, device=self.DEVICE).unsqueeze(0).repeat(4, 1, 1)
+        #T = torch.tensor([0, 0, 1], device = self.DEVICE).repeat(4, 1)
+        #print("RTTTTTTTTTT", R , T)
         cameras = FoVOrthographicCameras(
             device=self.device,
             R=R,
             T=T,
             scale_xyz=scaling_factors
         )
+        #print(scaling_factors)
+        #print("C2", cameras.get_projection_transform().get_matrix())
+        print("cameras", cameras.compute_projection_matrix(1.0, 100.0, 1.0, -1.0, 1.0, -1.0, scaling_factors))
+        #extrinsic = R[]
         
         raster_settings = RasterizationSettings(
             image_size=image_size, 
@@ -316,13 +368,13 @@ class differentiablerenderer():
     
     def render(self):
         M = self.load_meshes(meshes_dir = "/home/snamburu/attack/GAN-vehicles/")
-        distances, elevations, azimuths, lights_directions, scaling_factors, intensities = self.sample_rendering_params(32)
+        distances, elevations, azimuths, lights_directions, scaling_factors, intensities = self.sample_rendering_params(4)
         image_path = "/home/snamburu/attack/sid/empty/009_00011_altered_00234.jpg"
         self.TS = ToTensor()
         images_batch = self.TS(Image.open(image_path)).unsqueeze(0)
         print(images_batch.shape)
-        M = M[:32]
-        n_vehicles_list = [1]*32 
+        M = M[:4]
+        n_vehicles_list = [1]*4
         meshes_batch_list = [random.choices(M, k=n_vehicles) for n_vehicles in n_vehicles_list]
         meshes, locations_batch = self.randomly_place_meshes_multi(
             meshes_batch_list, 
@@ -335,7 +387,7 @@ class differentiablerenderer():
         annotations = self.construct_annotations_files(locations_batch)
 
         meshes_joined = []
-        for i in range(32):
+        for i in range(4):
             meshes_joined.append(join_meshes_as_scene(meshes[i]).to(self.device))
             
             # Render the images
@@ -348,13 +400,12 @@ class differentiablerenderer():
             scaling_factors=scaling_factors,
             intensities=intensities,
             distances=distances,
-            image_size=384
+            image_size=1024
         )
 
-        print(synthetic_images.shape)
         iter_counter = 0
         for syn_img in synthetic_images:
-            save_image(syn_img, f"./results_mik/image_{str(iter_counter).zfill(5)}.png", quality=100)
+            save_image(syn_img, f"/home/snamburu/get3d/results/image_{str(iter_counter).zfill(5)}.png", quality=100)
             iter_counter += 1
 
         return synthetic_images
