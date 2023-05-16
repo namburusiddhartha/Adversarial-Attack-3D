@@ -12,6 +12,9 @@ from torch_utils import training_stats
 from torch_utils.ops import conv2d_gradfix
 from training.satellite_renderer import SatRenderer
 
+from torchvision.utils import save_image
+
+
 
 # ----------------------------------------------------------------------------
 class Loss:
@@ -77,6 +80,45 @@ class StyleGAN2Loss(Loss):
         if return_shape:
             img, sdf, syn_camera, deformation, v_deformed, mesh_v, mesh_f, mask_pyramid, sdf_reg_loss, render_return_value = self.G.synthesis(
                 ws,
+                return_shape=return_shape,
+                ws_geo=ws_geo,
+            )
+            return img, sdf, ws, syn_camera, deformation, v_deformed, mesh_v, mesh_f, mask_pyramid, ws_geo, sdf_reg_loss, render_return_value
+        else:
+            img, syn_camera, mask_pyramid, sdf_reg_loss, render_return_value = self.G.synthesis(
+                ws, return_shape=return_shape,
+                ws_geo=ws_geo)
+        return img, ws, syn_camera, mask_pyramid, render_return_value
+    
+    def run_GS(
+            self, z, c, camera, update_emas=False, return_shape=False,
+    ):
+        # Step 1: Map the sampled z code to w-space
+        ws = self.G.mapping(z, c, update_emas=update_emas)
+        geo_z = torch.randn_like(z)
+        ws_geo = self.G.mapping_geo(
+            geo_z, c,
+            update_emas=update_emas)
+
+        # Step 2: Apply style mixing to the latent code
+        if self.style_mixing_prob > 0:
+            with torch.autograd.profiler.record_function('style_mixing'):
+                cutoff = torch.empty([], dtype=torch.int64, device=ws.device).random_(1, ws.shape[1])
+                cutoff = torch.where(
+                    torch.rand([], device=ws.device) < self.style_mixing_prob, cutoff,
+                    torch.full_like(cutoff, ws.shape[1]))
+                ws[:, cutoff:] = self.G.mapping(torch.randn_like(z), c, update_emas=False)[:, cutoff:]
+
+                cutoff = torch.empty([], dtype=torch.int64, device=ws_geo.device).random_(1, ws_geo.shape[1])
+                cutoff = torch.where(
+                    torch.rand([], device=ws_geo.device) < self.style_mixing_prob, cutoff,
+                    torch.full_like(cutoff, ws_geo.shape[1]))
+                ws_geo[:, cutoff:] = self.G.mapping_geo(torch.randn_like(z), c, update_emas=False)[:, cutoff:]
+
+        # Step 3: Generate rendered image of 3D generated shapes.
+        if return_shape:
+            img, sdf, syn_camera, deformation, v_deformed, mesh_v, mesh_f, mask_pyramid, sdf_reg_loss, render_return_value = self.G.synthesis(
+                ws, camera=camera,
                 return_shape=return_shape,
                 ws_geo=ws_geo,
             )
@@ -153,6 +195,14 @@ class StyleGAN2Loss(Loss):
                 # First generate the rendered image of generated 3D shapes
                 gen_img, _gen_ws, gen_camera, mask_pyramid, render_return_value = self.run_G(
                     gen_z, gen_c, update_emas=True)
+                
+                iter_counter = 5
+                for syn_img in gen_img:
+                    syn_img = syn_img[0:3, :, : ]
+                    print(syn_img.shape)
+                    save_image(syn_img, f"./results_sample/image_{str(iter_counter).zfill(5)}.png", quality=100)
+                    iter_counter += 1
+                
                 if self.G.synthesis.data_camera_mode == 'shapenet_car' or self.G.synthesis.data_camera_mode == 'shapenet_chair' \
                         or self.G.synthesis.data_camera_mode == 'shapenet_motorbike' or self.G.synthesis.data_camera_mode == 'renderpeople' or \
                         self.G.synthesis.data_camera_mode == 'shapenet_plant' or self.G.synthesis.data_camera_mode == 'shapenet_vase' or \
@@ -243,8 +293,39 @@ class StyleGAN2Loss(Loss):
         # Dr1: Apply R1 regularization. - TBD
         if phase in ['DSmain', 'DSreg']:
             with torch.autograd.profiler.record_function('Dgen_forward'):
-                img, sdf, ws, syn_camera, deformation, v_deformed, mesh_v, mesh_f, mask_pyramid, ws_geo, sdf_reg_loss, render_return_value = self.run_G(
-                    gen_z, gen_c, update_emas=True, return_shape=True)
+
+
+                cam_mv = torch.tensor([[[ 9.1028e-01, -4.0890e-01, -6.4758e-02,  0.0000e+00],
+                                        [ 0.0000e+00,  1.5642e-01, -9.8769e-01,  0.0000e+00],
+                                        [ 4.1399e-01,  8.9908e-01,  1.4239e-01,  0.0000e+00],
+                                        [-2.9802e-08,  0.0000e+00,  5.0000e+00,  1.0000e+00]],
+
+                                        [[ 7.1421e-01,  6.9438e-01,  8.7983e-02,  0.0000e+00],
+                                        [ 0.0000e+00,  1.2570e-01, -9.9207e-01,  0.0000e+00],
+                                        [-6.9993e-01,  7.0855e-01,  8.9779e-02,  0.0000e+00],
+                                        [ 0.0000e+00, -2.9802e-08,  5.0000e+00,  1.0000e+00]],
+
+                                        [[ 8.4861e-02,  9.6629e-01,  2.4306e-01,  0.0000e+00],
+                                        [ 0.0000e+00,  2.4394e-01, -9.6979e-01,  0.0000e+00],
+                                        [-9.9639e-01,  8.2297e-02,  2.0701e-02,  0.0000e+00],
+                                        [ 0.0000e+00,  9.3132e-09,  5.0000e+00,  1.0000e+00]],
+
+                                        [[ 9.8899e-01, -1.4649e-01, -2.0712e-02,  0.0000e+00],
+                                        [ 0.0000e+00,  1.3999e-01, -9.9015e-01,  0.0000e+00],
+                                        [ 1.4795e-01,  9.7926e-01,  1.3845e-01,  0.0000e+00],
+                                        [ 0.0000e+00, -5.9605e-08,  5.0000e+00,  1.0000e+00]]], device = self.device).unsqueeze(1)
+                
+                img, sdf, ws, syn_camera, deformation, v_deformed, mesh_v, mesh_f, mask_pyramid, ws_geo, sdf_reg_loss, render_return_value = self.run_GS(
+                    gen_z, gen_c, camera=cam_mv, update_emas=True, return_shape=True)
+                
+                iter_counter = 0
+                for syn_img in img:
+                    syn_img = syn_img[0:3, :, : ]
+                    print(syn_img.shape)
+                    save_image(syn_img, f"./results_sample/image_{str(iter_counter).zfill(5)}.png", quality=100)
+                    iter_counter += 1
+                
+               
                 
                 satimg = self.SatRenderer.generate(mesh_v, mesh_f, ws_geo)
 

@@ -14,11 +14,13 @@ import nvdiffrast.torch as dr
 from training.sample_camera_distribution import sample_camera, create_camera_from_angle
 from uni_rep.rep_3d.dmtet import DMTetGeometry
 from uni_rep.camera.perspective_camera import PerspectiveCamera
+from uni_rep.camera.orthographic_camera import OrthographicCamera
 from uni_rep.render.neural_render import NeuralRender
 from training.discriminator_architecture import Discriminator
 from training.detect_discriminator import SatNet
 from training.geometry_predictor import Conv3DImplicitSynthesisNetwork, TriPlaneTex, \
     MappingNetwork, ToRGBLayer, TriPlaneTexGeo
+import torchvision
 
 
 @persistence.persistent_class
@@ -44,7 +46,7 @@ class DMTETSynthesisNetwork(torch.nn.Module):
             one_3d_generator=False,
             **block_kwargs,  # Arguments for SynthesisBlock.
     ):  #
-        assert img_resolution >= 4 and img_resolution & (img_resolution - 1) == 0
+        #assert img_resolution >= 4 and img_resolution & (img_resolution - 1) == 0
         super().__init__()
         self.device = device
         self.one_3d_generator = one_3d_generator
@@ -67,7 +69,9 @@ class DMTETSynthesisNetwork(torch.nn.Module):
         # Camera defination, we follow the defination from Blender (check the render_shapenet_data/rener_shapenet.py for more details)
         fovy = np.arctan(32 / 2 / 35) * 2
         fovyangle = fovy / np.pi * 180.0
-        dmtet_camera = PerspectiveCamera(fovy=fovyangle, device=self.device)
+        #dmtet_camera = PerspectiveCamera(fovy=fovyangle, device=self.device)
+        dmtet_camera = OrthographicCamera(device=self.device)
+        self.K_cam = dmtet_camera
 
         # Renderer we used.
         dmtet_renderer = NeuralRender(device, camera_model=dmtet_camera)
@@ -410,6 +414,7 @@ class DMTETSynthesisNetwork(torch.nn.Module):
                     _ws_geo.unsqueeze(dim=0).detach(),
                     _tex_hard_mask.unsqueeze(dim=0))
             background_feature = torch.zeros_like(tex_feat)
+            
             # Merge them together
             img_feat = tex_feat * _tex_hard_mask.unsqueeze(dim=0) + background_feature * (
                     1 - _tex_hard_mask.unsqueeze(dim=0))
@@ -513,6 +518,7 @@ class DMTETSynthesisNetwork(torch.nn.Module):
                    range(len(return_value['tex_pos']))]
         ws = torch.cat(ws_list, dim=0).contiguous()
 
+
         # Predict the RGB color for each pixel (self.to_rgb is 1x1 convolution)
         if self.feat_channel > 3:
             network_out = self.to_rgb(img_feat.permute(0, 3, 1, 2), ws[:, -1])
@@ -520,6 +526,8 @@ class DMTETSynthesisNetwork(torch.nn.Module):
             network_out = img_feat.permute(0, 3, 1, 2)
         img = network_out
         img_buffers_viz = None
+
+        #img_right = torch.where(tex_hard_mask.permute(0, 3, 1, 2).repeat(1, 3, 1, 1) > 0, img[..., :3], Bimg.unsqueeze(0).cuda())
 
         if self.render_type == 'neural_render':
             img = img[:, :3]
@@ -558,7 +566,10 @@ class GeneratorDMTETMesh(torch.nn.Module):
         self.img_resolution = img_resolution
         self.img_channels = img_channels
         self.device = synthesis_kwargs['device']
+
+        use_style_mixing = False
         self.use_style_mixing = use_style_mixing
+        print("HIIIIIIIIIII", self.use_style_mixing)
 
         self.synthesis = DMTETSynthesisNetwork(
             w_dim=w_dim, img_resolution=img_resolution, img_channels=self.img_channels,

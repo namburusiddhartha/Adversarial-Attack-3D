@@ -11,6 +11,7 @@ from uni_rep.rep_3d.dmtet import DMTetGeometry
 from training.sample_camera_distribution import sample_camera
 
 
+
 class SatRenderer(torch.nn.Module):
     def __init__(
             self,
@@ -138,8 +139,40 @@ class SatRenderer(torch.nn.Module):
             campos, cam_mv, rotation_angle, elevation_angle, sample_r = self.generate_random_camera(
                         ws_tex.shape[0], n_views=2)
             
-        cam_mv = cam_mv[:, 0, :, :].unsqueeze(1)        
+        cam_mv = cam_mv[:, 0, :, :].unsqueeze(1)  
+
+        cam_mv = torch.tensor([[[ 0.7743, -0.6151, -0.1489, -0.7443],
+         [ 0.0000,  0.2352, -0.9719, -4.8597],
+         [ 0.6329,  0.7525,  0.1821,  0.9105],
+         [ 0.0000,  0.0000,  0.0000,  1.0000]],
+
+        [[-0.7290,  0.6677,  0.1508,  0.7540],
+         [ 0.0000,  0.2203, -0.9754, -4.8772],
+         [-0.6846, -0.7111, -0.1606, -0.8030],
+         [ 0.0000,  0.0000,  0.0000,  1.0000]],
+
+        [[-0.7067, -0.7027, -0.0823, -0.4115],
+         [ 0.0000,  0.1163, -0.9932, -4.9661],
+         [ 0.7075, -0.7019, -0.0822, -0.4110],
+         [ 0.0000,  0.0000,  0.0000,  1.0000]],
+
+        [[ 0.9207, -0.3860, -0.0577, -0.2887],
+         [ 0.0000,  0.1480, -0.9890, -4.9450],
+         [ 0.3903,  0.9106,  0.1362,  0.6811],
+         [ 0.0000,  0.0000,  0.0000,  1.0000]]], device = self.device).unsqueeze(1)   
+
 
         antilias_mask, hard_mask, return_value = self.render_mesh(mesh_v, mesh_f, cam_mv)
 
+
+        
+
         return antilias_mask
+    
+    def orthographiccamera(self, R, T, distances):
+        znear = 1.0
+        zfar = 100.0
+        max_y = 1.0
+        min_y = -1.0
+        max_x = 1.0
+        min_x = -1.0

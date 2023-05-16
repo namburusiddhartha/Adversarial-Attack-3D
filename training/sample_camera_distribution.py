@@ -10,6 +10,26 @@ import math
 import numpy as np
 from training.math_utils_torch import *
 
+def create_camera_from_angle_and_translation(phi, theta, sample_r, sample_t, sample_R, device='cuda'):
+    '''
+    :param phi: rotation angle of the camera
+    :param theta:  rotation angle of the camera
+    :param sample_r: distance from the camera to the origin
+    :param device:
+    :return:
+    '''
+    phi = torch.clamp(phi, 1e-5, 2*math.pi - 1e-5)
+
+    camera_origin = torch.zeros((phi.shape[0], 3), device=device)
+    camera_origin[:, 0:1] = sample_r * torch.sin(phi) * torch.cos(theta)
+    camera_origin[:, 2:3] = sample_r * torch.sin(phi) * torch.sin(theta)
+    camera_origin[:, 1:2] = sample_r * torch.cos(phi)
+
+    forward_vector = normalize_vecs(camera_origin)
+
+    world2cam_matrix = create_my_world2cam_matrix_translation(forward_vector, camera_origin, sample_t, sample_R, device=device)
+    return world2cam_matrix, forward_vector, camera_origin, phi, theta
+
 
 def create_camera_from_angle(phi, theta, sample_r, device='cuda'):
     '''
@@ -19,7 +39,7 @@ def create_camera_from_angle(phi, theta, sample_r, device='cuda'):
     :param device:
     :return:
     '''
-    phi = torch.clamp(phi, 1e-5, math.pi - 1e-5)
+    phi = torch.clamp(phi, 1e-5, 2*math.pi - 1e-5)
 
     camera_origin = torch.zeros((phi.shape[0], 3), device=device)
     camera_origin[:, 0:1] = sample_r * torch.sin(phi) * torch.cos(theta)
@@ -153,6 +173,24 @@ def create_my_world2cam_matrix(forward_vector, origin, device=None):
     new_r = torch.eye(4, device=device).unsqueeze(0).repeat(forward_vector.shape[0], 1, 1)
     new_r[:, :3, :3] = torch.cat(
         (left_vector.unsqueeze(dim=1), up_vector.unsqueeze(dim=1), forward_vector.unsqueeze(dim=1)), dim=1)
+    world2cam = new_r @ new_t
+    return world2cam
+
+def create_my_world2cam_matrix_translation(forward_vector, origin, sample_t, sample_R, device=None):
+    """Takes in the direction the camera is pointing and the camera origin and returns a cam2world matrix."""
+
+    forward_vector = normalize_vecs(forward_vector)
+    up_vector = torch.tensor([0, 1, 0], dtype=torch.float, device=device).expand_as(forward_vector)
+
+    left_vector = normalize_vecs(torch.cross(up_vector, forward_vector, dim=-1))
+
+    up_vector = normalize_vecs(torch.cross(forward_vector, left_vector, dim=-1))
+
+    new_t = torch.eye(4, device=device).unsqueeze(0).repeat(forward_vector.shape[0], 1, 1)
+    new_t[:, :3, 3] = -origin + sample_t
+    new_r = torch.eye(4, device=device).unsqueeze(0).repeat(forward_vector.shape[0], 1, 1)
+    new_r[:, :3, :3] = torch.cat(
+        (left_vector.unsqueeze(dim=1), up_vector.unsqueeze(dim=1), forward_vector.unsqueeze(dim=1)), dim=1) @ sample_R
     world2cam = new_r @ new_t
     return world2cam
 

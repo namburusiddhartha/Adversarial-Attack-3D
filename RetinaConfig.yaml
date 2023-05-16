@@ -258,8 +258,8 @@ MODEL:
     NAME: SemSegFPNHead
     NORM: GN
     NUM_CLASSES: 54
-  WEIGHTS: https://dl.fbaipublicfiles.com/detectron2/COCO-Detection/retinanet_R_101_FPN_3x/190397697/model_final_971ab9.pkl
-OUTPUT_DIR: ./output
+  WEIGHTS: "/home/snamburu/get3d/GET3D_modified/model_final.pth" #https://dl.fbaipublicfiles.com/detectron2/COCO-Detection/retinanet_R_101_FPN_3x/190397697/model_final_971ab9.pkl
+OUTPUT_DIR: ./attack_output_generator/
 SEED: -1
 SOLVER:
   AMP:
